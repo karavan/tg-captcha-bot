@@ -6,6 +6,8 @@
 
 Telegram bot that validates new users that enter supergroup. Validation works like a simple captcha. Bot written in Go (Golang).
 
+The goal of this bot is to be as simple and minimal as possible.
+
 This bot has been tested on several supergroups (2000+ people) for a long time and has shown its effectiveness against spammers.
 
 ## Cloud hosted instance of the bot

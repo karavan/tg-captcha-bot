@@ -19,7 +19,7 @@ cd tg-captcha-bot
 ```yaml
 services:
   tg-captcha-bot:
-    image: mxssl/tg-captcha-bot:v1.1.13
+    image: mxssl/tg-captcha-bot:v1.1.17
     volumes:
       - ./config.toml:/config.toml
     restart: unless-stopped
