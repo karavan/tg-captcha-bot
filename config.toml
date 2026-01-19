@@ -30,7 +30,7 @@ ban_duration = "forever"
 
 # Delete the "user joined the group" system message when verification fails. Can be "yes" or "no"
 # This helps prevent spam advertising via usernames in join messages
-delete_join_message_on_fail = "no"
+delete_join_message_on_fail = "yes"
 
 # Do you want to use a socks5 proxy server? Can be "yes" or "no"
 use_socks5_proxy = "no"
