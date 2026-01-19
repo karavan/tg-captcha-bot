@@ -31,10 +31,59 @@ This bot has been tested on several supergroups (2000+ people) for a long time a
 
 `/healthz` - check that the bot is working correctly
 
-## Сustomization
+## Configuration
 
-You can change several bot's settings (welcome message, ban duration, socks5 proxy server) through the configuration file `config.toml`
+The bot uses a TOML configuration file and environment variables.
 
-## Alternatives / Forks
+### Environment Variables
 
-- [momai/tg-captcha-bot](https://github.com/momai/tg-captcha-bot) - fork of `tg-captcha-bot` with interesting additional features.
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `TGTOKEN` | Yes | Telegram bot token from [@BotFather](https://t.me/BotFather) |
+| `CONFIG_PATH` | No | Directory path containing `config.toml`. Defaults to current directory |
+
+### Configuration File Options
+
+Create a `config.toml` file with the following options:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `button_text` | string | `"I'm not a robot!"` | Text displayed on the captcha button |
+| `welcome_message` | string | `"Hello! This is the spam protection system..."` | Message sent to new users |
+| `after_success_message` | string | `"User passed the validation."` | Message shown after successful verification |
+| `after_fail_message` | string | `"User didn't pass the validation and was banned."` | Message shown after failed verification |
+| `success_message_strategy` | string | `"show"` | Action after success: `"show"` (edit message) or `"del"` (delete message) |
+| `fail_message_strategy` | string | `"del"` | Action after failure: `"show"` (edit message) or `"del"` (delete message) |
+| `welcome_timeout` | string | `"30"` | Seconds user has to press the button |
+| `ban_duration` | string | `"forever"` | Ban duration: `"forever"` or number of minutes (e.g., `"10"`) |
+| `delete_join_message_on_fail` | string | `"no"` | Delete system join/leave messages for failed users: `"yes"` or `"no"` |
+| `use_socks5_proxy` | string | `"no"` | Enable SOCKS5 proxy: `"yes"` or `"no"` |
+| `socks5_address` | string | `"1.1.1.1"` | SOCKS5 proxy IP address |
+| `socks5_port` | string | `"1080"` | SOCKS5 proxy port |
+| `socks5_login` | string | `"login"` | SOCKS5 proxy username |
+| `socks5_password` | string | `"password"` | SOCKS5 proxy password |
+
+### Example Configuration
+
+```toml
+button_text = "I'm not a robot!"
+welcome_message = "Hello! Please press the button within 30 seconds or you will be banned!"
+after_success_message = "User passed the validation."
+after_fail_message = "User didn't pass the validation and was banned."
+success_message_strategy = "show"
+fail_message_strategy = "del"
+welcome_timeout = "30"
+ban_duration = "forever"
+delete_join_message_on_fail = "no"
+use_socks5_proxy = "no"
+```
+
+### Default behavior
+
+With the default configuration:
+
+1. New user joins the group
+2. Bot restricts the user and sends a welcome message with "I'm not a robot!" button
+3. User has 30 seconds to press the button
+4. **If user passes**: Challenge message is edited to show "User passed the validation."
+5. **If user fails**: User is banned forever, challenge message is deleted
