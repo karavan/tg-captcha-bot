@@ -22,22 +22,25 @@ import (
 
 // Config struct for toml config file
 type Config struct {
-	ButtonText          string `mapstructure:"button_text"`
-	WelcomeMessage      string `mapstructure:"welcome_message"`
-	AfterSuccessMessage string `mapstructure:"after_success_message"`
-	AfterFailMessage    string `mapstructure:"after_fail_message"`
-	PrintSuccessAndFail string `mapstructure:"print_success_and_fail_messages_strategy"`
-	WelcomeTimeout      string `mapstructure:"welcome_timeout"`
-	BanDurations        string `mapstructure:"ban_duration"`
-	UseSocks5Proxy      string `mapstructure:"use_socks5_proxy"`
-	Socks5Address       string `mapstructure:"socks5_address"`
-	Socks5Port          string `mapstructure:"socks5_port"`
-	Socks5Login         string `mapstructure:"socks5_login"`
-	Socks5Password      string `mapstructure:"socks5_password"`
+	ButtonText             string `mapstructure:"button_text"`
+	WelcomeMessage         string `mapstructure:"welcome_message"`
+	AfterSuccessMessage    string `mapstructure:"after_success_message"`
+	AfterFailMessage       string `mapstructure:"after_fail_message"`
+	SuccessMessageStrategy string `mapstructure:"success_message_strategy"`
+	FailMessageStrategy    string `mapstructure:"fail_message_strategy"`
+	WelcomeTimeout         string `mapstructure:"welcome_timeout"`
+	BanDurations           string `mapstructure:"ban_duration"`
+	DeleteJoinMsgOnFail    string `mapstructure:"delete_join_message_on_fail"`
+	UseSocks5Proxy         string `mapstructure:"use_socks5_proxy"`
+	Socks5Address          string `mapstructure:"socks5_address"`
+	Socks5Port             string `mapstructure:"socks5_port"`
+	Socks5Login            string `mapstructure:"socks5_login"`
+	Socks5Password         string `mapstructure:"socks5_password"`
 }
 
 var config Config
 var passedUsers = sync.Map{}
+var bannedUsers = sync.Map{} // tracks users banned by the bot for join message cleanup
 var bot *tb.Bot
 var tgtoken = "TGTOKEN"
 var configPath = "CONFIG_PATH"
@@ -76,6 +79,7 @@ func main() {
 
 	bot.Handle(tb.OnUserJoined, challengeUser)
 	bot.Handle(tb.OnCallback, passChallenge)
+	bot.Handle(tb.OnUserLeft, handleUserLeft)
 
 	bot.Handle("/healthz", func(m *tb.Message) {
 		msg := "I'm OK"
@@ -138,23 +142,30 @@ func challengeUser(m *tb.Message) {
 				log.Println(e)
 			}
 			chatMember := tb.ChatMember{User: m.UserJoined, RestrictedUntil: banDuration}
+			// Mark user as banned for cleanup of "removed" message
+			if config.DeleteJoinMsgOnFail == "yes" {
+				bannedUsers.Store(m.UserJoined.ID, struct{}{})
+			}
 			err := bot.Ban(m.Chat, &chatMember)
 			if err != nil {
 				log.Println(err)
 			}
 
-			switch config.PrintSuccessAndFail {
+			switch config.FailMessageStrategy {
 			case "show":
 				_, err := bot.Edit(challengeMsg, config.AfterFailMessage)
 				if err != nil {
 					log.Println(err)
 				}
 			case "del":
-				err := bot.Delete(m)
+				err := bot.Delete(challengeMsg)
 				if err != nil {
 					log.Println(err)
 				}
-				err = bot.Delete(challengeMsg)
+			}
+			// Delete join message if configured (prevents spam advertising via usernames)
+			if config.DeleteJoinMsgOnFail == "yes" {
+				err = bot.Delete(m)
 				if err != nil {
 					log.Println(err)
 				}
@@ -177,7 +188,7 @@ func passChallenge(c *tb.Callback) {
 	}
 	passedUsers.Store(c.Sender.ID, struct{}{})
 
-	switch config.PrintSuccessAndFail {
+	switch config.SuccessMessageStrategy {
 	case "show":
 		_, err := bot.Edit(c.Message, config.AfterSuccessMessage)
 		if err != nil {
@@ -199,6 +210,22 @@ func passChallenge(c *tb.Callback) {
 	err = bot.Respond(c, &tb.CallbackResponse{Text: "Validation passed!"})
 	if err != nil {
 		log.Println(err)
+	}
+}
+
+// handleUserLeft deletes the "bot removed user" message for banned users
+func handleUserLeft(m *tb.Message) {
+	if m.UserLeft == nil {
+		return
+	}
+	// Check if this user was banned by the bot
+	_, wasBanned := bannedUsers.Load(m.UserLeft.ID)
+	if wasBanned {
+		bannedUsers.Delete(m.UserLeft.ID)
+		err := bot.Delete(m)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 }
 

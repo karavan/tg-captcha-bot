@@ -12,14 +12,25 @@ after_success_message = "User passed the validation."
 # Edit welcome message with this text if user failed validation
 after_fail_message = "User didn't pass the validation and was banned."
 
-# Show success and failure messages or delete them. Pick "show" or "del"
-print_success_and_fail_messages_strategy = "show"
+# What to do with challenge message when user passes verification. Pick "show" or "del"
+# "show" - edit message with after_success_message text
+# "del" - delete the challenge message
+success_message_strategy = "show"
+
+# What to do with challenge message when user fails verification. Pick "show" or "del"
+# "show" - edit message with after_fail_message text
+# "del" - delete the challenge message
+fail_message_strategy = "del"
 
 # During this time in seconds, the new user have to press the captha button
 welcome_timeout = "30"
 
 # If the new user does not press the button, the bot will ban the user for this duration of time. Can be "forever" or number of minutes ("10")
 ban_duration = "forever"
+
+# Delete the "user joined the group" system message when verification fails. Can be "yes" or "no"
+# This helps prevent spam advertising via usernames in join messages
+delete_join_message_on_fail = "no"
 
 # Do you want to use a socks5 proxy server? Can be "yes" or "no"
 use_socks5_proxy = "no"
